@@ -315,16 +315,6 @@ app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Return a clear response for unknown API requests.
-app.use('/api', (_req, res) => {
-  res.status(404).json({ error: 'API route not found.' });
-});
-
-app.use((error, _req, res, _next) => {
-  console.error('Request failed:', error.message);
-  if (res.headersSent) return;
-  res.status(500).json({ error: 'An unexpected server error occurred.' });
-});
 
 const server = app.listen(port, () => console.log(`Airsell Cargo API listening on port ${port}`));
 async function shutdown() {
