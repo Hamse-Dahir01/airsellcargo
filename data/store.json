@@ -1,0 +1,270 @@
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const ROOT_DIR = __dirname;
+const DATA_DIR = path.join(ROOT_DIR, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'store.json');
+
+app.use(cors());
+app.use(express.json({ limit: '5mb' }));
+
+const ensureDataFile = () => {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+
+  if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify({
+      enquiries: [],
+      quotes: [],
+      shipments: [],
+      events: [],
+      audit: []
+    }, null, 2));
+  }
+};
+
+const loadStore = () => {
+  ensureDataFile();
+  const raw = fs.readFileSync(DATA_FILE, 'utf8');
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    return { enquiries: [], quotes: [], shipments: [], events: [], audit: [] };
+  }
+};
+
+const saveStore = (store) => {
+  ensureDataFile();
+  fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
+};
+
+const makeReference = (prefix) => `${prefix}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+const addAudit = (store, eventType, details = {}) => {
+  store.audit.push({
+    id: uuidv4(),
+    eventType,
+    createdAt: new Date().toISOString(),
+    details
+  });
+};
+
+app.get('/api/v1/health', (_req, res) => {
+  res.json({ ok: true, service: 'Airsell Cargo Portal API', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/v1/enquiries', (_req, res) => {
+  const store = loadStore();
+  res.json({ enquiries: store.enquiries });
+});
+
+app.post('/api/v1/enquiries', (req, res) => {
+  const {
+    contactName,
+    companyName,
+    email,
+    phone,
+    direction,
+    service,
+    origin,
+    destination,
+    cargoDescription,
+    weightKg,
+    notes,
+    consentGiven
+  } = req.body || {};
+
+  if (!contactName || !email || !phone || !direction || !service || !origin || !destination || !cargoDescription) {
+    return res.status(400).json({ error: 'Missing required enquiry fields.' });
+  }
+
+  if (consentGiven !== true) {
+    return res.status(400).json({ error: 'Customer consent is required before submitting the enquiry.' });
+  }
+
+  const store = loadStore();
+  const enquiry = {
+    id: uuidv4(),
+    publicReference: makeReference('ASQ'),
+    contactName,
+    companyName: companyName || '',
+    email,
+    phone,
+    direction,
+    service,
+    origin,
+    destination,
+    cargoDescription,
+    weightKg: weightKg ?? null,
+    notes: notes || '',
+    status: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  store.enquiries.push(enquiry);
+  addAudit(store, 'enquiry_created', { enquiryId: enquiry.id, reference: enquiry.publicReference });
+  saveStore(store);
+
+  res.status(201).json({ message: 'Enquiry submitted successfully.', enquiry });
+});
+
+app.post('/api/v1/enquiries/:id/quotes', (req, res) => {
+  const { id } = req.params;
+  const { currency = 'USD', totalAmount = 0, inclusions = '', exclusions = '', validUntil = null, notes = '' } = req.body || {};
+  const store = loadStore();
+  const enquiry = store.enquiries.find((item) => item.id === id);
+
+  if (!enquiry) {
+    return res.status(404).json({ error: 'Enquiry not found.' });
+  }
+
+  const quote = {
+    id: uuidv4(),
+    publicReference: makeReference('ASQO'),
+    enquiryId: enquiry.id,
+    status: 'sent',
+    currency,
+    totalAmount: Number(totalAmount),
+    inclusions,
+    exclusions,
+    validUntil,
+    notes,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  store.quotes.push(quote);
+  enquiry.status = 'quoted';
+  enquiry.updatedAt = new Date().toISOString();
+  addAudit(store, 'quote_created', { enquiryId: enquiry.id, quoteId: quote.id, reference: quote.publicReference });
+  saveStore(store);
+
+  res.status(201).json({ message: 'Quote created successfully.', quote });
+});
+
+app.get('/api/v1/quotes', (_req, res) => {
+  const store = loadStore();
+  res.json({ quotes: store.quotes });
+});
+
+app.post('/api/v1/quotes/:id/accept', (req, res) => {
+  const { id } = req.params;
+  const store = loadStore();
+  const quote = store.quotes.find((item) => item.id === id);
+
+  if (!quote) {
+    return res.status(404).json({ error: 'Quote not found.' });
+  }
+
+  if (quote.status === 'accepted') {
+    return res.status(400).json({ error: 'Quote has already been accepted.' });
+  }
+
+  quote.status = 'accepted';
+  quote.updatedAt = new Date().toISOString();
+
+  const enquiry = store.enquiries.find((item) => item.id === quote.enquiryId);
+  if (!enquiry) {
+    return res.status(404).json({ error: 'Enquiry for this quote was not found.' });
+  }
+
+  enquiry.status = 'accepted';
+  enquiry.updatedAt = new Date().toISOString();
+
+  const shipment = {
+    id: uuidv4(),
+    publicReference: makeReference('ASS'),
+    enquiryId: enquiry.id,
+    quoteId: quote.id,
+    customerName: enquiry.contactName,
+    companyName: enquiry.companyName,
+    direction: enquiry.direction,
+    origin: enquiry.origin,
+    destination: enquiry.destination,
+    cargoDescription: enquiry.cargoDescription,
+    weightKg: enquiry.weightKg,
+    status: 'booked',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  store.shipments.push(shipment);
+  addAudit(store, 'quote_accepted', { quoteId: quote.id, shipmentId: shipment.id });
+  addAudit(store, 'shipment_created', { shipmentId: shipment.id, enquiryId: enquiry.id });
+  saveStore(store);
+
+  res.json({ message: 'Quote accepted and shipment created.', quote, shipment });
+});
+
+app.get('/api/v1/shipments', (_req, res) => {
+  const store = loadStore();
+  res.json({ shipments: store.shipments });
+});
+
+app.patch('/api/v1/shipments/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body || {};
+
+  if (!status) {
+    return res.status(400).json({ error: 'Status is required.' });
+  }
+
+  const store = loadStore();
+  const shipment = store.shipments.find((item) => item.id === id);
+
+  if (!shipment) {
+    return res.status(404).json({ error: 'Shipment not found.' });
+  }
+
+  shipment.status = status;
+  shipment.updatedAt = new Date().toISOString();
+
+  store.events.push({
+    id: uuidv4(),
+    shipmentId: shipment.id,
+    status,
+    eventType: 'shipment_status_changed',
+    createdAt: new Date().toISOString()
+  });
+
+  addAudit(store, 'shipment_status_changed', { shipmentId: shipment.id, status });
+  saveStore(store);
+
+  res.json({ message: 'Shipment status updated.', shipment });
+});
+
+app.get('/api/v1/dashboard/overview', (_req, res) => {
+  const store = loadStore();
+
+  res.json({
+    activeShipments: store.shipments.length,
+    pendingQuotes: store.quotes.filter((quote) => quote.status === 'sent').length,
+    openEnquiries: store.enquiries.filter((enquiry) => enquiry.status === 'new').length,
+    shipmentsByStatus: store.shipments.reduce((acc, shipment) => {
+      acc[shipment.status] = (acc[shipment.status] || 0) + 1;
+      return acc;
+    }, {})
+  });
+});
+
+app.use(express.static(ROOT_DIR));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+
+  res.sendFile(path.join(ROOT_DIR, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Airsell Cargo API running on http://localhost:${PORT}`);
+});

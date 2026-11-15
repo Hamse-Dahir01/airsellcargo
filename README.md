@@ -1,35 +1,61 @@
 # Airsell Cargo portal
 
-Responsive front-end prototype for Airsell Cargo Services, based at Hargeisa Airport (HGA), Somaliland.
+Responsive front-end prototype for Airsell Cargo Services, based at Hargeisa Airport (HGA), Somaliland. This repository now includes a lightweight backend starter for a cargo portal workflow.
 
-## Current frontend
+## Included
 
 - `index.html` — public landing page and shipment enquiry form
-- `dashboard.html` — sample customer dashboard
-- `admin.html` — sample operations dashboard
-- `styles.css` — shared responsive styles
-- `app.js` — navigation and prototype-only interactions
+- `dashboard.html` — customer shipment dashboard
+- `admin.html` — operations dashboard
+- `styles.css` — responsive styling
+- `app.js` — UI interactions
+- `server.js` — Express API starter for enquiries, quotes, shipments, and dashboard metrics
+- `data/store.json` — seed data for local prototype persistence
+- `docs/backend-design.md` and `docs/database-schema.sql` — architecture and schema planning artifacts
 
-## Backend planning artifacts
+## Run locally
 
-- [`docs/database-schema.sql`](docs/database-schema.sql) — initial PostgreSQL schema for organizations, accounts, enquiries, quotes, shipments, tracking events, documents, invoices, and audit events
-- [`docs/backend-design.md`](docs/backend-design.md) — proposed API, workflow, security requirements, and implementation sequence
+1. Install dependencies:
+   npm install
+2. Start the server:
+   npm run dev
+3. Open the app:
+   http://localhost:3000
 
-## Preview the UI
+## Available API routes
 
-Open `index.html` in a browser or serve this directory with a static web server. No build step is required.
+### Health
 
-## Prototype limitations — not production-ready
+- `GET /api/v1/health`
 
-All dashboard figures and shipment records are illustrative sample data. The enquiry form only validates fields in the browser and displays a preview message; it does not transmit or save enquiries. There is no authentication, backend API, database connection, real shipment tracking, payment processing, or secure document storage. The dashboard pages are not protected and must not be used to expose real customer data.
+### Enquiries
 
-The SQL and API design are planning artifacts, not an installed or tested backend. Do not collect customer shipment data through this prototype as if it were a live portal. Before launch, implement and test the backend, authentication and authorization, secure private file storage, server-side validation, abuse prevention, privacy notices, backups, and monitoring. Confirm actual services, contacts, operational processes, and applicable requirements with Airsell before publishing.
+- `GET /api/v1/enquiries`
+- `POST /api/v1/enquiries`
 
-## Suggested implementation order
+### Quotes
 
-1. Review the data model and API plan with Airsell operations.
-2. Implement the API and run the schema against a development PostgreSQL database.
-3. Add staff authentication and role checks; protect operations routes before using real data.
-4. Connect enquiry submission and staff-managed quotes.
-5. Add shipment milestones and private document storage with per-customer access controls.
-6. Test authorization, data validation, backups, and deployment before launch.
+- `GET /api/v1/quotes`
+- `POST /api/v1/enquiries/:id/quotes`
+- `POST /api/v1/quotes/:id/accept`
+
+### Shipments
+
+- `GET /api/v1/shipments`
+- `PATCH /api/v1/shipments/:id/status`
+
+### Dashboard
+
+- `GET /api/v1/dashboard/overview`
+
+## Important note
+
+The UI and API are still a working prototype. They do not yet include secure authentication, role-based staff access, protected document uploads, or a production database. Use the API only for local development and guided internal testing until those safeguards are implemented.
+
+## Next backend milestones
+
+1. Add secure authentication and staff access control.
+2. Add database-backed persistence instead of the local JSON file.
+3. Add protected document uploads with private storage.
+4. Add invoice, payment, and audit flows.
+5. Deploy to a production environment with monitoring and backups.

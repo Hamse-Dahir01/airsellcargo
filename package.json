@@ -1,0 +1,24 @@
+{
+  "name": "airsellcargo-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Airsell Cargo portal backend starter for enquiries, quotes, shipments, and operations tracking.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "cargo",
+    "freight",
+    "portal",
+    "airsell"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "uuid": "^10.0.0"
+  }
+}
