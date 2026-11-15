@@ -310,6 +310,15 @@ app.get('/', (_req, res) => {
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'API route not found.' });
 });
+// Show the homepage at the website's root address.
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Return a clear response for unknown API requests.
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'API route not found.' });
+});
 
 app.use((error, _req, res, _next) => {
   console.error('Request failed:', error.message);
