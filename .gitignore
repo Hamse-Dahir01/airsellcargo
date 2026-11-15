@@ -1,7 +1,8 @@
-{
-  "enquiries": [],
-  "quotes": [],
-  "shipments": [],
-  "events": [],
-  "audit": []
-}
+node_modules/
+.env
+.env.*
+!.env.example
+npm-debug.log*
+.DS_Store
+coverage/
+*.log
