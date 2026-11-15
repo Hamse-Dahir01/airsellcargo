@@ -1,26 +1,35 @@
-# Airsell Cargo portal — first frontend milestone
+# Airsell Cargo portal
 
-Responsive, single-page public website and shipment-enquiry form for Airsell Cargo Services, based at Hargeisa Airport (HGA), Somaliland.
+Responsive front-end prototype for Airsell Cargo Services, based at Hargeisa Airport (HGA), Somaliland.
 
-## Files
+## Current frontend
 
-- `index.html` — public landing page and quote request form
-- `styles.css` — responsive visual design
-- `app.js` — mobile navigation and client-side form preview
+- `index.html` — public landing page and shipment enquiry form
+- `dashboard.html` — sample customer dashboard
+- `admin.html` — sample operations dashboard
+- `styles.css` — shared responsive styles
+- `app.js` — navigation and prototype-only interactions
 
-## Preview locally
+## Backend planning artifacts
 
-Open `index.html` in a browser, or serve this directory with any static web server. No build step is required.
+- [`docs/database-schema.sql`](docs/database-schema.sql) — initial PostgreSQL schema for organizations, accounts, enquiries, quotes, shipments, tracking events, documents, invoices, and audit events
+- [`docs/backend-design.md`](docs/backend-design.md) — proposed API, workflow, security requirements, and implementation sequence
 
-## Important: prototype only
+## Preview the UI
 
-The quote form currently validates fields in the browser and displays a preview message. It does **not** transmit or save enquiries, authenticate customers, securely upload documents, create bookings, or provide shipment tracking. Do not collect customer shipment data through this prototype as if it were a live portal.
+Open `index.html` in a browser or serve this directory with a static web server. No build step is required.
 
-Before launch, connect a secure backend and agreed Airsell contact channel; add server-side validation, spam protection, privacy notice/consent, and secure access controls for customer and staff data. Do not add document uploads until private storage and authorization are in place.
+## Prototype limitations — not production-ready
 
-## Next implementation milestones
+All dashboard figures and shipment records are illustrative sample data. The enquiry form only validates fields in the browser and displays a preview message; it does not transmit or save enquiries. There is no authentication, backend API, database connection, real shipment tracking, payment processing, or secure document storage. The dashboard pages are not protected and must not be used to expose real customer data.
 
-1. Add a backend API and persistent database for enquiries and staff-managed quotes.
-2. Add staff authentication, role-based access, and an operations dashboard.
-3. Add customer accounts, shipment milestones, and secure document storage.
-4. Configure real Airsell contact details, service descriptions, and operational policies before launch.
+The SQL and API design are planning artifacts, not an installed or tested backend. Do not collect customer shipment data through this prototype as if it were a live portal. Before launch, implement and test the backend, authentication and authorization, secure private file storage, server-side validation, abuse prevention, privacy notices, backups, and monitoring. Confirm actual services, contacts, operational processes, and applicable requirements with Airsell before publishing.
+
+## Suggested implementation order
+
+1. Review the data model and API plan with Airsell operations.
+2. Implement the API and run the schema against a development PostgreSQL database.
+3. Add staff authentication and role checks; protect operations routes before using real data.
+4. Connect enquiry submission and staff-managed quotes.
+5. Add shipment milestones and private document storage with per-customer access controls.
+6. Test authorization, data validation, backups, and deployment before launch.
