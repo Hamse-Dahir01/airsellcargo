@@ -20,39 +20,75 @@ document.querySelector('#year')?.textContent = new Date().getFullYear();
 const quoteForm = document.querySelector('#quote-form');
 const feedback = document.querySelector('#form-feedback');
 
-quoteForm?.addEventListener('submit', (event) => {
+quoteForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (!quoteForm.reportValidity()) return;
 
-  feedback.textContent = 'Thanks — this form is active as a front-end prototype. Connect the secure backend and Airsell contact flow before publishing this live.';
-  feedback.classList.add('visible');
-  feedback.focus?.();
+  const submitButton = quoteForm.querySelector('button[type="submit"]');
+  const originalButtonText = submitButton?.innerHTML;
+  const fields = new FormData(quoteForm);
+  const directionLabel = fields.get('direction');
+  const direction = directionLabel === 'Export from Hargeisa'
+    ? 'export'
+    : directionLabel === 'Import to Hargeisa' ? 'import' : 'other';
+
+  const enquiry = {
+    contactName: fields.get('name'),
+    companyName: fields.get('company'),
+    email: fields.get('email'),
+    phone: fields.get('phone'),
+    direction,
+    service: fields.get('service'),
+    origin: fields.get('origin'),
+    destination: fields.get('destination'),
+    cargoDescription: fields.get('cargo'),
+    weightKg: fields.get('weight') || null,
+    notes: fields.get('notes'),
+    consentGiven: quoteForm.querySelector('[type="checkbox"]').checked
+  };
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = 'Sending enquiry…';
+  }
+  feedback.textContent = '';
+  feedback.classList.remove('visible', 'form-error');
+
+  try {
+    const response = await fetch('/api/v1/enquiries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(enquiry)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'We could not submit your request. Please try again or contact Airsell Cargo.');
+
+    feedback.textContent = `${result.message || 'Your enquiry was received.'} Reference: ${result.reference}. This is a request for review, not a confirmed booking.`;
+    feedback.classList.add('visible');
+    quoteForm.reset();
+  } catch (error) {
+    feedback.textContent = error.message || 'The service is temporarily unavailable. Please contact Airsell Cargo directly.';
+    feedback.classList.add('visible', 'form-error');
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.innerHTML = originalButtonText;
+    }
+  }
 });
 
 const filterInput = document.querySelector('#field-filter');
 const shipmentTable = document.querySelector('#shipment-table tbody');
-
 filterInput?.addEventListener('input', () => {
   if (!shipmentTable) return;
   const query = filterInput.value.trim().toLowerCase();
   [...shipmentTable.querySelectorAll('tr')].forEach((row) => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(query) ? '' : 'none';
+    row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
   });
-});
-
-const statusPills = document.querySelectorAll('[data-status]');
-statusPills.forEach((pill) => {
-  const status = pill.dataset.status;
-  if (status === 'Booked') pill.classList.add('is-booked');
-  if (status === 'In transit') pill.classList.add('is-transit');
-  if (status === 'Documents') pill.classList.add('is-docs');
-  if (status === 'Delivered') pill.classList.add('is-delivered');
-  if (status === 'Pending') pill.classList.add('is-pending');
 });
 
 const analyticsBars = document.querySelectorAll('.mini-bar');
 analyticsBars.forEach((bar) => {
-  const width = bar.dataset.width || '50';
-  bar.style.setProperty('--bar-width', width + '%');
+  bar.style.setProperty('--bar-width', `${bar.dataset.width || '50'}%`);
 });
