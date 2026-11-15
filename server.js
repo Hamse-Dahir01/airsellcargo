@@ -287,9 +287,22 @@ app.patch('/api/v1/staff/shipments/:id/status', checkSameOrigin, requireLogin, l
   } finally { client.release(); }
 });
 
-app.use(express.static(__dirname, { index: false, dotfiles: 'ignore' }));
-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.use('/api', (_req, res) => res.status(404).json({ error: 'API route not found.' }));
+// Publish only these website files, not the application directory.
+const publicFiles = {
+  '/index.html': 'index.html',
+  '/styles.css': 'styles.css',
+  '/app.js': 'app.js',
+  '/admin.html': 'admin.html',
+  '/dashboard.html': 'dashboard.html'
+};
+
+for (const [route, filename] of Object.entries(publicFiles)) {
+  app.get(route, (_req, res, next) => {
+    res.sendFile(path.join(__dirname, filename), (error) => {
+      if (error) next(error);
+    });
+  });
+}
 app.use((error, _req, res, _next) => {
   console.error('Request failed:', error.message);
   if (res.headersSent) return;
