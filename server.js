@@ -1,3 +1,8 @@
+'use strict';
+
+// Replacement based on the supplied server code.
+// Requires the existing database schema and installed dependencies.
+// This is not a completed deployment or a full security audit.
 const crypto = require('node:crypto');
 const path = require('node:path');
 const express = require('express');
@@ -8,9 +13,10 @@ const { rateLimit } = require('express-rate-limit');
 const { Pool } = require('pg');
 require('dotenv').config();
 
-const requiredEnv = ['DATABASE_URL', 'SESSION_SECRET'];
-for (const name of requiredEnv) {
-  if (!process.env[name]) throw new Error(`${name} must be configured before starting the API.`);
+for (const name of ['DATABASE_URL', 'SESSION_SECRET']) {
+  if (!process.env[name]) {
+    throw new Error(`${name} must be configured before starting the API.`);
+  }
 }
 if (process.env.SESSION_SECRET.length < 32) {
   throw new Error('SESSION_SECRET must contain at least 32 characters.');
@@ -19,16 +25,10 @@ if (process.env.SESSION_SECRET.length < 32) {
 const app = express();
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const port = Number(process.env.PORT || 3000);
-const rolesByKind = {
-  sales: ['sales', 'admin'],
-  operations: ['operations', 'admin'],
-  documentation: ['documentation', 'operations', 'admin'],
-  finance: ['finance', 'admin'],
-  admin: ['admin']
-};
 
 if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 app.disable('x-powered-by');
+// Preserved from the supplied app; review and configure CSP before production.
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '100kb', type: 'application/json' }));
 
@@ -48,20 +48,43 @@ app.use(session({
   }
 }));
 
-const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: 'draft-7', legacyHeaders: false });
-const publicEnquiryLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Too many requests. Please try again later.' } });
-const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 8, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Too many sign-in attempts. Please try again later.' } });
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false
+});
+const publicEnquiryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' }
+});
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 8,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many sign-in attempts. Please try again later.' }
+});
 app.use('/api/', apiLimiter);
 
 function checkSameOrigin(req, res, next) {
   const origin = req.get('origin');
-  if (!origin) return next(); // Non-browser clients may omit Origin; authentication and CSRF checks still apply.
+  if (!origin) return next();
   let received;
-  try { received = new URL(origin); } catch { return res.status(403).json({ error: 'Invalid request origin.' }); }
+  try {
+    received = new URL(origin);
+  } catch {
+    return res.status(403).json({ error: 'Invalid request origin.' });
+  }
   const expected = process.env.APP_ORIGIN
     ? new URL(process.env.APP_ORIGIN)
     : new URL(`${req.protocol}://${req.get('host')}`);
-  if (received.origin !== expected.origin) return res.status(403).json({ error: 'Cross-origin request rejected.' });
+  if (received.origin !== expected.origin) {
+    return res.status(403).json({ error: 'Cross-origin request rejected.' });
+  }
   next();
 }
 
@@ -76,7 +99,9 @@ function safeText(value, maxLength) {
 }
 
 function requireLogin(req, res, next) {
-  if (!req.session.userId) return res.status(401).json({ error: 'Authentication required.' });
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
   next();
 }
 
@@ -90,7 +115,8 @@ async function loadStaff(req, res, next) {
       [req.session.userId]
     );
     const user = result.rows[0];
-    if (!user || !user.is_active || user.account_kind !== 'staff' || user.roles.length === 0) {
+    if (!user || !user.is_active || user.account_kind !== 'staff' ||
+        !Array.isArray(user.roles) || user.roles.length === 0) {
       return res.status(403).json({ error: 'Staff access required.' });
     }
     req.staff = user;
@@ -117,7 +143,8 @@ function requireCsrf(req, res, next) {
   }
   const providedBuffer = Buffer.from(token);
   const expectedBuffer = Buffer.from(expected);
-  if (providedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(providedBuffer, expectedBuffer)) {
+  if (providedBuffer.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(providedBuffer, expectedBuffer)) {
     return res.status(403).json({ error: 'A valid CSRF token is required.' });
   }
   next();
@@ -127,7 +154,9 @@ app.get('/api/v1/health', async (_req, res, next) => {
   try {
     await pool.query('SELECT 1');
     res.json({ ok: true, service: 'Airsell Cargo API' });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post('/api/v1/auth/login', checkSameOrigin, loginLimiter, async (req, res, next) => {
@@ -150,29 +179,48 @@ app.post('/api/v1/auth/login', checkSameOrigin, loginLimiter, async (req, res, n
       const argon2 = require('argon2');
       validPassword = await argon2.verify(user.password_hash, password);
     }
-    if (!validPassword || user.roles.length === 0) {
+    if (!validPassword || !Array.isArray(user?.roles) || user.roles.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
-    await new Promise((resolve, reject) => req.session.regenerate((error) => error ? reject(error) : resolve()));
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((error) => error ? reject(error) : resolve());
+    });
     req.session.userId = user.id;
     req.session.csrfToken = crypto.randomBytes(32).toString('base64url');
-    res.json({ user: { id: user.id, email: user.email, name: user.full_name, roles: user.roles }, csrfToken: req.session.csrfToken });
-  } catch (error) { next(error); }
+    await new Promise((resolve, reject) => {
+      req.session.save((error) => error ? reject(error) : resolve());
+    });
+    res.json({
+      user: { id: user.id, email: user.email, name: user.full_name, roles: user.roles },
+      csrfToken: req.session.csrfToken
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.get('/api/v1/auth/me', requireLogin, loadStaff, (req, res) => {
-  res.json({ user: { id: req.staff.id, email: req.staff.email, name: req.staff.full_name, roles: req.staff.roles }, csrfToken: req.session.csrfToken || null });
+  res.json({
+    user: { id: req.staff.id, email: req.staff.email, name: req.staff.full_name, roles: req.staff.roles },
+    csrfToken: req.session.csrfToken || null
+  });
 });
 
 app.post('/api/v1/auth/logout', checkSameOrigin, requireLogin, requireCsrf, (req, res, next) => {
   req.session.destroy((error) => {
     if (error) return next(error);
-    res.clearCookie('airsell.sid', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
+    res.clearCookie('airsell.sid', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    });
     res.status(204).end();
   });
 });
 
 app.post('/api/v1/enquiries', checkSameOrigin, publicEnquiryLimiter, async (req, res, next) => {
+  let client;
   try {
     const body = req.body || {};
     const contactName = safeText(body.contactName, 200);
@@ -186,21 +234,41 @@ app.post('/api/v1/enquiries', checkSameOrigin, publicEnquiryLimiter, async (req,
     const cargoDescription = safeText(body.cargoDescription, 2000);
     const notes = typeof body.notes === 'string' ? body.notes.trim().slice(0, 5000) : null;
     const weightKg = body.weightKg === '' || body.weightKg == null ? null : Number(body.weightKg);
-    if (!contactName || !email || !email.includes('@') || !phone || !direction || !service || !origin || !destination || !cargoDescription || body.consentGiven !== true || (weightKg !== null && (!Number.isFinite(weightKg) || weightKg <= 0))) {
+    if (!contactName || !email || !email.includes('@') || !phone || !direction ||
+        !service || !origin || !destination || !cargoDescription || body.consentGiven !== true ||
+        (weightKg !== null && (!Number.isFinite(weightKg) || weightKg <= 0))) {
       return res.status(400).json({ error: 'Please provide valid required shipment details and consent.' });
     }
     const reference = newReference('ASQ');
-    const result = await pool.query(
+    client = await pool.connect();
+    await client.query('BEGIN');
+    const result = await client.query(
       `INSERT INTO enquiries
-        (public_reference, contact_name, company_name, email, phone, direction, requested_service, origin, destination, cargo_description, weight_kg, notes, consent_recorded_at)
+        (public_reference, contact_name, company_name, email, phone, direction, requested_service,
+         origin, destination, cargo_description, weight_kg, notes, consent_recorded_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now())
        RETURNING id, public_reference, status, created_at`,
-      [reference, contactName, companyName, email, phone, direction, service, origin, destination, cargoDescription, weightKg, notes]
+      [reference, contactName, companyName, email, phone, direction, service,
+        origin, destination, cargoDescription, weightKg, notes]
     );
     const enquiry = result.rows[0];
-    await pool.query(`INSERT INTO audit_events (event_type, enquiry_id, details) VALUES ('enquiry_created', $1, $2)`, [enquiry.id, JSON.stringify({ publicReference: reference })]);
-    res.status(201).json({ message: 'Enquiry received. Airsell Cargo will review your request and contact you.', reference: enquiry.public_reference, status: enquiry.status });
-  } catch (error) { next(error); }
+    await client.query(
+      `INSERT INTO audit_events (event_type, enquiry_id, details)
+       VALUES ('enquiry_created', $1, $2)`,
+      [enquiry.id, JSON.stringify({ publicReference: reference })]
+    );
+    await client.query('COMMIT');
+    res.status(201).json({
+      message: 'Enquiry received. Airsell Cargo will review your request and contact you.',
+      reference: enquiry.public_reference,
+      status: enquiry.status
+    });
+  } catch (error) {
+    if (client) await client.query('ROLLBACK').catch(() => {});
+    next(error);
+  } finally {
+    if (client) client.release();
+  }
 });
 
 app.get('/api/v1/staff/enquiries', requireLogin, loadStaff, requireRoles('sales', 'operations', 'admin'), async (_req, res, next) => {
@@ -211,62 +279,95 @@ app.get('/api/v1/staff/enquiries', requireLogin, loadStaff, requireRoles('sales'
          FROM enquiries ORDER BY created_at DESC LIMIT 200`
     );
     res.json({ enquiries: result.rows });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post('/api/v1/staff/enquiries/:id/quotes', checkSameOrigin, requireLogin, loadStaff, requireRoles('sales', 'admin'), requireCsrf, async (req, res, next) => {
-  const client = await pool.connect();
+  let client;
   try {
-    const totalAmount = Number(req.body?.totalAmount);
+    const rawAmount = req.body?.totalAmount;
+    const totalAmount = Number(rawAmount);
     const currency = safeText(req.body?.currency, 3)?.toUpperCase();
-    if (!Number.isFinite(totalAmount) || totalAmount < 0 || !currency || !/^[A-Z]{3}$/.test(currency)) {
+    if (!['number', 'string'].includes(typeof rawAmount) ||
+        (typeof rawAmount === 'string' && rawAmount.trim() === '') ||
+        !Number.isFinite(totalAmount) || totalAmount < 0 ||
+        !currency || !/^[A-Z]{3}$/.test(currency)) {
       return res.status(400).json({ error: 'Provide a valid amount and 3-letter currency code.' });
     }
+    client = await pool.connect();
     await client.query('BEGIN');
-    const enquiryResult = await client.query('SELECT id, status FROM enquiries WHERE id = $1 FOR UPDATE', [req.params.id]);
+    const enquiryResult = await client.query(
+      'SELECT id, status FROM enquiries WHERE id = $1 FOR UPDATE', [req.params.id]
+    );
     if (!enquiryResult.rowCount) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Enquiry not found.' });
     }
-    const versionResult = await client.query('SELECT COALESCE(MAX(version), 0) + 1 AS version FROM quotes WHERE enquiry_id = $1', [req.params.id]);
+    const versionResult = await client.query(
+      'SELECT COALESCE(MAX(version), 0) + 1 AS version FROM quotes WHERE enquiry_id = $1',
+      [req.params.id]
+    );
     const now = new Date();
+    // Preserves the existing status convention. This route does not deliver an email.
     const quoteResult = await client.query(
-      `INSERT INTO quotes (enquiry_id, version, status, currency, total_amount, inclusions, exclusions, terms, valid_until, created_by, sent_at)
+      `INSERT INTO quotes (enquiry_id, version, status, currency, total_amount, inclusions,
+                           exclusions, terms, valid_until, created_by, sent_at)
        VALUES ($1,$2,'sent',$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING id, enquiry_id, version, status, currency, total_amount, valid_until, sent_at`,
       [req.params.id, versionResult.rows[0].version, currency, totalAmount,
-        safeText(req.body?.inclusions, 5000), safeText(req.body?.exclusions, 5000), safeText(req.body?.terms, 5000),
-        req.body?.validUntil || null, req.staff.id, now]
+        safeText(req.body?.inclusions, 5000), safeText(req.body?.exclusions, 5000),
+        safeText(req.body?.terms, 5000), req.body?.validUntil || null, req.staff.id, now]
     );
-    await client.query("UPDATE enquiries SET status = 'quoted', updated_at = now() WHERE id = $1", [req.params.id]);
-    await client.query("INSERT INTO audit_events (event_type, actor_user_id, enquiry_id, quote_id) VALUES ('quote_sent', $1, $2, $3)", [req.staff.id, req.params.id, quoteResult.rows[0].id]);
+    await client.query(
+      "UPDATE enquiries SET status = 'quoted', updated_at = now() WHERE id = $1", [req.params.id]
+    );
+    await client.query(
+      "INSERT INTO audit_events (event_type, actor_user_id, enquiry_id, quote_id) VALUES ('quote_sent', $1, $2, $3)",
+      [req.staff.id, req.params.id, quoteResult.rows[0].id]
+    );
     await client.query('COMMIT');
     res.status(201).json({ quote: quoteResult.rows[0] });
   } catch (error) {
-    await client.query('ROLLBACK').catch(() => {});
+    if (client) await client.query('ROLLBACK').catch(() => {});
     next(error);
-  } finally { client.release(); }
+  } finally {
+    if (client) client.release();
+  }
 });
 
 app.get('/api/v1/staff/shipments', requireLogin, loadStaff, requireRoles('operations', 'documentation', 'admin'), async (_req, res, next) => {
   try {
     const result = await pool.query(
-      `SELECT id, public_reference, organization_id, direction, origin, destination, cargo_description, weight_kg,
-              status, estimated_departure, estimated_arrival, created_at
+      `SELECT id, public_reference, organization_id, direction, origin, destination,
+              cargo_description, weight_kg, status, estimated_departure, estimated_arrival, created_at
          FROM shipments ORDER BY created_at DESC LIMIT 200`
     );
     res.json({ shipments: result.rows });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.patch('/api/v1/staff/shipments/:id/status', checkSameOrigin, requireLogin, loadStaff, requireRoles('operations', 'admin'), requireCsrf, async (req, res, next) => {
-  const allowedStatuses = ['booked', 'pickup_scheduled', 'received_at_hga', 'documents_review', 'customs_processing', 'ready_for_dispatch', 'departed', 'arrived', 'delivery_in_progress', 'delivered', 'on_hold', 'delayed', 'cancelled', 'completed'];
+  const allowedStatuses = [
+    'booked', 'pickup_scheduled', 'received_at_hga', 'documents_review', 'customs_processing',
+    'ready_for_dispatch', 'departed', 'arrived', 'delivery_in_progress', 'delivered',
+    'on_hold', 'delayed', 'cancelled', 'completed'
+  ];
   const status = req.body?.status;
-  if (!allowedStatuses.includes(status)) return res.status(400).json({ error: 'Invalid shipment status.' });
-  const client = await pool.connect();
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid shipment status.' });
+  }
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
-    const updated = await client.query('UPDATE shipments SET status = $1, updated_at = now() WHERE id = $2 RETURNING id, public_reference, status', [status, req.params.id]);
+    const updated = await client.query(
+      'UPDATE shipments SET status = $1, updated_at = now() WHERE id = $2 RETURNING id, public_reference, status',
+      [status, req.params.id]
+    );
     if (!updated.rowCount) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Shipment not found.' });
@@ -274,20 +375,28 @@ app.patch('/api/v1/staff/shipments/:id/status', checkSameOrigin, requireLogin, l
     const customerMessage = safeText(req.body?.customerMessage, 1000);
     const internalNote = safeText(req.body?.internalNote, 3000);
     await client.query(
-      `INSERT INTO shipment_events (shipment_id, status, customer_message, internal_note, is_customer_visible, created_by)
+      `INSERT INTO shipment_events
+        (shipment_id, status, customer_message, internal_note, is_customer_visible, created_by)
        VALUES ($1,$2,$3,$4,$5,$6)`,
       [req.params.id, status, customerMessage, internalNote, Boolean(customerMessage), req.staff.id]
     );
-    await client.query("INSERT INTO audit_events (event_type, actor_user_id, shipment_id, details) VALUES ('shipment_status_changed', $1, $2, $3)", [req.staff.id, req.params.id, JSON.stringify({ status })]);
+    await client.query(
+      "INSERT INTO audit_events (event_type, actor_user_id, shipment_id, details) VALUES ('shipment_status_changed', $1, $2, $3)",
+      [req.staff.id, req.params.id, JSON.stringify({ status })]
+    );
     await client.query('COMMIT');
     res.json({ shipment: updated.rows[0] });
   } catch (error) {
-    await client.query('ROLLBACK').catch(() => {});
+    if (client) await client.query('ROLLBACK').catch(() => {});
     next(error);
-  } finally { client.release(); }
+  } finally {
+    if (client) client.release();
+  }
 });
 
-// Publish only these website files, not the application directory.
+// Only explicitly listed website files may be served publicly.
+// The HTML pages themselves must not contain private customer data or secrets.
+// Staff data remains protected by the authenticated API routes above.
 const publicFiles = {
   '/index.html': 'index.html',
   '/styles.css': 'styles.css',
@@ -295,7 +404,6 @@ const publicFiles = {
   '/admin.html': 'admin.html',
   '/dashboard.html': 'dashboard.html'
 };
-
 for (const [route, filename] of Object.entries(publicFiles)) {
   app.get(route, (_req, res, next) => {
     res.sendFile(path.join(__dirname, filename), (error) => {
@@ -303,24 +411,61 @@ for (const [route, filename] of Object.entries(publicFiles)) {
     });
   });
 }
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+
+// One homepage route only.
+app.get('/', (_req, res, next) => {
+  res.sendFile(path.join(__dirname, 'index.html'), (error) => {
+    if (error) next(error);
+  });
 });
 
+// Unknown API routes and other unknown addresses.
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'API route not found.' });
 });
-// Show the homepage at the website's root address.
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+app.use((_req, res) => {
+  res.status(404).send('Page not found.');
 });
 
+// Must stay after routes and before app.listen.
+app.use((error, _req, res, next) => {
+  console.error('Request failed:', error.message);
+  if (res.headersSent) return next(error);
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Invalid JSON request body.' });
+  }
+  if (error.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request body is too large.' });
+  }
+  if (error.status === 404 || error.code === 'ENOENT') {
+    return res.status(404).json({ error: 'Resource not found.' });
+  }
+  res.status(500).json({ error: 'An unexpected server error occurred.' });
+});
 
-const server = app.listen(port, () => console.log(`Airsell Cargo API listening on port ${port}`));
-async function shutdown() {
+pool.on('error', (error) => {
+  console.error('Unexpected idle database connection error:', error.message);
+});
+
+const server = app.listen(port, () => {
+  console.log(`Airsell Cargo API listening on port ${port}`);
+});
+
+let shuttingDown = false;
+function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  const timer = setTimeout(() => process.exit(1), 15000);
+  timer.unref();
   server.close(async () => {
-    await pool.end();
-    process.exit(0);
+    try {
+      await pool.end();
+      clearTimeout(timer);
+      process.exit(0);
+    } catch (error) {
+      console.error('Shutdown failed:', error.message);
+      process.exit(1);
+    }
   });
 }
 process.on('SIGTERM', shutdown);
