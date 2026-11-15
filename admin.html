@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Airsell Cargo operations dashboard for quote management, shipment tracking, and document review.">
+  <title>Airsell Cargo Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="announcement"><span class="announcement-dot"></span> OPERATIONS DASHBOARD · QUOTES · TRACKING · DOCUMENTS </div>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Airsell Cargo home">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 42 42" fill="none"><path d="M5 24.5 36.5 7 24 37l-4.1-11.4L5 24.5Z" fill="currentColor"/><path d="m19.9 25.6 8.5-8.5" stroke="#102B36" stroke-width="2.3" stroke-linecap="round"/></svg></span>
+      <span class="brand-name">airsell<span>cargo</span></span>
+    </a>
+    <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false"><span></span><span></span></button>
+    <nav class="main-nav" aria-label="Main navigation">
+      <a href="index.html#services">Services</a>
+      <a href="dashboard.html">Customer portal</a>
+      <a href="admin.html">Operations</a>
+      <a class="nav-cta" href="index.html#quote">Add enquiry <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main class="portal-shell">
+    <div class="portal-topbar">
+      <div>
+        <p class="eyebrow"><span class="eyebrow-line"></span> OPERATIONS</p>
+        <h1>Operations dashboard</h1>
+      </div>
+      <div class="portal-actions">
+        <span class="portal-chip">Team: Cargo desk</span>
+        <span class="portal-chip primary">Live view</span>
+      </div>
+    </div>
+
+    <section class="portal-grid" aria-label="Operations summary">
+      <article class="metric-card">
+        <div class="label">Open quotes</div>
+        <div class="value">09</div>
+        <div class="sub">Awaiting response or approval</div>
+        <div class="trend"><span class="dot"></span> 3 urgent</div>
+      </article>
+      <article class="metric-card">
+        <div class="label">In transit</div>
+        <div class="value">17</div>
+        <div class="sub">Shipments currently moving</div>
+        <div class="trend"><span class="dot"></span> 4 nearing delivery</div>
+      </article>
+      <article class="metric-card">
+        <div class="label">Documents due</div>
+        <div class="value">06</div>
+        <div class="sub">Reviews and approvals pending</div>
+        <div class="trend"><span class="dot"></span> 2 overdue</div>
+      </article>
+      <article class="metric-card">
+        <div class="label">Revenue pipeline</div>
+        <div class="value">$48.2K</div>
+        <div class="sub">Current active quotes</div>
+        <div class="trend"><span class="dot"></span> +8.5% vs last month</div>
+      </article>
+    </section>
+
+    <section class="section-spacer panel">
+      <div class="panel-header">
+        <h2>Shipment queue</h2>
+        <div class="panel-tools">
+          <input id="field-filter" type="search" placeholder="Filter shipments" aria-label="Filter shipments">
+          <select aria-label="Filter status">
+            <option>All statuses</option>
+            <option>Booked</option>
+            <option>In transit</option>
+            <option>Documents</option>
+            <option>Delivered</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="shipment-table">
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Customer</th>
+              <th>Route</th>
+              <th>Status</th>
+              <th>ETA</th>
+              <th>Owner</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>AS-221</strong></td>
+              <td>Noor Logistics</td>
+              <td>HGA → Dubai</td>
+              <td><span class="status-pill is-booked" data-status="Booked">Booked</span></td>
+              <td>04 Jun</td>
+              <td>R. Ali</td>
+            </tr>
+            <tr>
+              <td><strong>AS-228</strong></td>
+              <td>East Trade</td>
+              <td>HGA → Nairobi</td>
+              <td><span class="status-pill is-transit" data-status="In transit">In transit</span></td>
+              <td>08 Jun</td>
+              <td>S. Omar</td>
+            </tr>
+            <tr>
+              <td><strong>AS-214</strong></td>
+              <td>Blue Harbor</td>
+              <td>HGA → Addis Ababa</td>
+              <td><span class="status-pill is-docs" data-status="Documents">Documents</span></td>
+              <td>02 Jun</td>
+              <td>A. Yusuf</td>
+            </tr>
+            <tr>
+              <td><strong>AS-202</strong></td>
+              <td>Palm Freight</td>
+              <td>HGA → Jeddah</td>
+              <td><span class="status-pill is-delivered" data-status="Delivered">Delivered</span></td>
+              <td>Completed</td>
+              <td>M. H</td>
+            </tr>
+            <tr>
+              <td><strong>AS-233</strong></td>
+              <td>Harbor Peak</td>
+              <td>HGA → Cairo</td>
+              <td><span class="status-pill is-pending" data-status="Pending">Pending</span></td>
+              <td>06 Jun</td>
+              <td>H. Abd</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section-spacer dash-layout">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Quote management</h2>
+          <span class="portal-chip primary">New quote</span>
+        </div>
+        <div class="stat-stack">
+          <div class="stat-box"><div><div class="kicker">Pending approval</div></div><strong>03</strong></div>
+          <div class="stat-box"><div><div class="kicker">Recently requested</div></div><strong>05</strong></div>
+          <div class="stat-box"><div><div class="kicker">Average response time</div></div><strong>12h</strong></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Document review</h2>
+        </div>
+        <div class="document-list">
+          <div class="file-item"><div class="meta"><strong>Invoice copy</strong><br>Blue Harbor</div><span class="tag">Review</span></div>
+          <div class="file-item"><div class="meta"><strong>Customs permit</strong><br>East Trade</div><span class="tag">Approved</span></div>
+          <div class="file-item"><div class="meta"><strong>Packing list</strong><br>Harbor Peak</div><span class="tag">Awaiting</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="index.html"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 42 42" fill="none"><path d="M5 24.5 36.5 7 24 37l-4.1-11.4L5 24.5Z" fill="currentColor"/><path d="m19.9 25.6 8.5-8.5" stroke="#102B36" stroke-width="2.3" stroke-linecap="round"/></svg></span><span class="brand-name">airsell<span>cargo</span></span></a>
+    <p>Operations overview · Cargo desk management · Hargeisa, Somaliland</p>
+    <span class="copyright">© <span id="year"></span> Airsell Cargo Services</span>
+    <a class="back-top" href="#top">BACK TO TOP ↑</a>
+  </footer>
+</body>
+</html>
