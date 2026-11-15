@@ -303,6 +303,14 @@ for (const [route, filename] of Object.entries(publicFiles)) {
     });
   });
 }
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'API route not found.' });
+});
+
 app.use((error, _req, res, _next) => {
   console.error('Request failed:', error.message);
   if (res.headersSent) return;
