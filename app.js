@@ -29,17 +29,17 @@ quoteForm?.addEventListener('submit', (event) => {
   feedback.focus?.();
 });
 
-const fieldFilter = document.querySelector('#field-filter');
+const filterInput = document.querySelector('#field-filter');
 const shipmentTable = document.querySelector('#shipment-table tbody');
-const filterRows = () => {
-  if (!fieldFilter || !shipmentTable) return;
-  const query = fieldFilter.value.trim().toLowerCase();
+
+filterInput?.addEventListener('input', () => {
+  if (!shipmentTable) return;
+  const query = filterInput.value.trim().toLowerCase();
   [...shipmentTable.querySelectorAll('tr')].forEach((row) => {
     const text = row.textContent.toLowerCase();
     row.style.display = text.includes(query) ? '' : 'none';
   });
-};
-fieldFilter?.addEventListener('input', filterRows);
+});
 
 const statusPills = document.querySelectorAll('[data-status]');
 statusPills.forEach((pill) => {
