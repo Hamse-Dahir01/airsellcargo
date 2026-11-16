@@ -92,3 +92,49 @@ const analyticsBars = document.querySelectorAll('.mini-bar');
 analyticsBars.forEach((bar) => {
   bar.style.setProperty('--bar-width', `${bar.dataset.width || '50'}%`);
 });
+
+// Customer portal shipment search, status filtering, sorting, and page-size control.
+const shipmentList = document.querySelector('#shipment-list');
+if (shipmentList) {
+  const search = document.querySelector('#shipment-search');
+  const statusFilter = document.querySelector('#shipment-status');
+  const sortSelect = document.querySelector('#shipment-sort');
+  const pageSizeSelect = document.querySelector('#shipment-page-size');
+  const results = document.querySelector('#shipment-results');
+  const emptyState = document.querySelector('#shipment-empty');
+  const cards = [...shipmentList.querySelectorAll('.shipment-card')];
+
+  const updateShipmentList = () => {
+    const query = search.value.trim().toLowerCase();
+    const status = statusFilter.value;
+    const sort = sortSelect.value;
+    const pageSize = Number(pageSizeSelect.value);
+    const matching = cards.filter((card) => {
+      const matchesSearch = card.textContent.toLowerCase().includes(query);
+      const matchesStatus = status === 'all' || card.dataset.status === status;
+      return matchesSearch && matchesStatus;
+    });
+
+    matching.sort((a, b) => {
+      if (sort === 'oldest') return Number(a.dataset.shipmentId) - Number(b.dataset.shipmentId);
+      if (sort === 'destination') return a.dataset.destination.localeCompare(b.dataset.destination);
+      return Number(b.dataset.shipmentId) - Number(a.dataset.shipmentId);
+    });
+
+    cards.forEach((card) => { card.hidden = true; });
+    matching.forEach((card, index) => {
+      if (index < pageSize) {
+        card.hidden = false;
+        shipmentList.insertBefore(card, emptyState);
+      }
+    });
+    const shown = Math.min(matching.length, pageSize);
+    results.textContent = `Showing ${shown} of ${matching.length} matching shipment${matching.length === 1 ? '' : 's'}.`;
+    emptyState.hidden = matching.length > 0;
+  };
+
+  [search, statusFilter, sortSelect, pageSizeSelect].forEach((control) => {
+    control.addEventListener(control === search ? 'input' : 'change', updateShipmentList);
+  });
+  updateShipmentList();
+}

@@ -1,18 +1,49 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" id="top">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Airsell Cargo customer portal and operations dashboard for shipment requests and cargo tracking.">
-  <title>Airsell Cargo Portal</title>
+  <meta name="description" content="Airsell Cargo customer portal and shipment tracking dashboard.">
+  <title>Customer portal | Airsell Cargo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Dashboard layout refinements */
+    .portal-shell { width: min(100% - 2rem, 1240px); margin-inline: auto; }
+    .portal-topbar, .portal-actions, .panel-tools { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+    .portal-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+    .shipment-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .shipment-card { min-width: 0; }
+    .shipment-card .footer { gap: .5rem; flex-wrap: wrap; }
+    .shipment-card details { margin-top: .8rem; }
+    .shipment-card details summary { cursor: pointer; font-weight: 600; }
+    .shipment-card details p { margin: .5rem 0 0; }
+    .shipment-controls { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .shipment-controls label { display: flex; align-items: center; gap: .4rem; }
+    .shipment-controls input, .shipment-controls select { max-width: 100%; }
+    .results-status { flex-basis: 100%; margin: 0; color: var(--muted, #65736f); }
+    .empty-state { grid-column: 1 / -1; padding: 1.25rem; text-align: center; border: 1px dashed var(--line, #dfe3dd); border-radius: 12px; }
+    .portal-note { margin: .5rem 0 1rem; color: var(--muted, #65736f); font-size: .9rem; }
+    .site-footer { scroll-margin-top: 1rem; }
+    @media (max-width: 900px) {
+      .portal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .shipment-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px) {
+      .portal-shell { width: min(100% - 1.25rem, 1240px); }
+      .portal-topbar { align-items: flex-start; }
+      .portal-actions, .portal-actions > * { width: 100%; }
+      .portal-grid, .shipment-card-grid { grid-template-columns: 1fr; }
+      .panel-tools, .shipment-controls, .shipment-controls label { width: 100%; }
+      .panel-tools input, .panel-tools select, .shipment-controls input, .shipment-controls select { width: 100%; min-height: 44px; }
+    }
+  </style>
   <script src="app.js" defer></script>
 </head>
 <body>
-  <div class="announcement"><span class="announcement-dot"></span> PORTAL HIGHLIGHTS · QUOTES · DOCUMENTS · TRACKING </div>
+  <div class="announcement"><span class="announcement-dot"></span> PORTAL HIGHLIGHTS · QUOTES · DOCUMENTS · TRACKING</div>
   <header class="site-header">
     <a class="brand" href="index.html" aria-label="Airsell Cargo home">
       <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 42 42" fill="none"><path d="M5 24.5 36.5 7 24 37l-4.1-11.4L5 24.5Z" fill="currentColor"/><path d="m19.9 25.6 8.5-8.5" stroke="#102B36" stroke-width="2.3" stroke-linecap="round"/></svg></span>
@@ -22,7 +53,7 @@
     <nav class="main-nav" aria-label="Main navigation">
       <a href="index.html#services">Services</a>
       <a href="index.html#how-it-works">How it works</a>
-      <a href="dashboard.html">Customer portal</a>
+      <a href="dashboard.html" aria-current="page">Customer portal</a>
       <a href="admin.html">Operations</a>
       <a class="nav-cta" href="index.html#quote">Request a quote <span aria-hidden="true">↗</span></a>
     </nav>
@@ -33,6 +64,7 @@
       <div>
         <p class="eyebrow"><span class="eyebrow-line"></span> CUSTOMER PORTAL</p>
         <h1>Shipment overview</h1>
+        <p class="portal-note">Illustrative sample data — connect an authenticated service before using this as a live customer portal.</p>
       </div>
       <div class="portal-actions">
         <span class="portal-chip">Customer: Noor Logistics</span>
@@ -41,118 +73,76 @@
     </div>
 
     <section class="portal-grid" aria-label="Customer metrics">
-      <article class="metric-card">
-        <div class="label">Active shipments</div>
-        <div class="value">04</div>
-        <div class="sub">Across import and export routes</div>
-        <div class="trend"><span class="dot"></span> +2 this month</div>
-      </article>
-      <article class="metric-card">
-        <div class="label">Pending quotes</div>
-        <div class="value">02</div>
-        <div class="sub">Awaiting confirmation</div>
-        <div class="trend"><span class="dot"></span> 1 response due today</div>
-      </article>
-      <article class="metric-card">
-        <div class="label">Documents</div>
-        <div class="value">12</div>
-        <div class="sub">Uploaded and approved</div>
-        <div class="trend"><span class="dot"></span> 3 need review</div>
-      </article>
-      <article class="metric-card">
-        <div class="label">On-time rate</div>
-        <div class="value">96%</div>
-        <div class="sub">Based on recent cargo movement</div>
-        <div class="trend"><span class="dot"></span> Strong delivery performance</div>
-      </article>
+      <article class="metric-card"><div class="label">Active shipments</div><div class="value">03</div><div class="sub">Across import and export routes</div><div class="trend"><span class="dot"></span> Current sample total</div></article>
+      <article class="metric-card"><div class="label">Pending quotes</div><div class="value">02</div><div class="sub">Awaiting confirmation</div><div class="trend"><span class="dot"></span> Sample data</div></article>
+      <article class="metric-card"><div class="label">Documents</div><div class="value">12</div><div class="sub">Uploaded and approved</div><div class="trend"><span class="dot"></span> 3 need review</div></article>
+      <article class="metric-card"><div class="label">On-time rate</div><div class="value">96%</div><div class="sub">Based on recent cargo movement</div><div class="trend"><span class="dot"></span> Sample performance</div></article>
     </section>
 
-    <section class="section-spacer panel">
+    <section class="section-spacer panel" aria-labelledby="shipments-heading">
       <div class="panel-header">
-        <h2>My shipments</h2>
-        <div class="panel-tools">
-          <input type="search" placeholder="Search shipment" aria-label="Search shipments">
-          <select aria-label="Sort shipments">
-            <option>Newest first</option>
-            <option>In progress</option>
-            <option>Delayed</option>
-          </select>
+        <h2 id="shipments-heading">My shipments</h2>
+        <div class="shipment-controls">
+          <label><span class="sr-only">Search shipments</span><input id="shipment-search" type="search" placeholder="Search ID or destination" aria-label="Search shipments"></label>
+          <label><span class="sr-only">Filter by status</span><select id="shipment-status" aria-label="Filter shipments by status"><option value="all">All statuses</option><option value="booked">Booked</option><option value="in transit">In transit</option><option value="documents">Documents</option></select></label>
+          <label><span class="sr-only">Sort shipments</span><select id="shipment-sort" aria-label="Sort shipments"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="destination">Destination A–Z</option></select></label>
+          <label>Show <select id="shipment-page-size" aria-label="Number of shipments to show"><option value="3">3</option><option value="6">6</option><option value="9">9</option></select></label>
+          <p id="shipment-results" class="results-status" aria-live="polite"></p>
         </div>
       </div>
-      <div class="shipment-card-grid">
-        <article class="shipment-card">
+      <div class="shipment-card-grid" id="shipment-list">
+        <article class="shipment-card" data-shipment-id="221" data-destination="Dubai" data-status="booked">
           <div class="meta"><span class="ref">Shipment #AS-221</span><span class="status-pill is-booked" data-status="Booked">Booked</span></div>
-          <h3>HGA → Dubai</h3>
-          <div class="route">Mixed electronics · 210 kg · 2 pallets</div>
-          <div class="footer"><span>Ready for dispatch</span><span>ETA: 4 Jun</span></div>
+          <h3>HGA → Dubai</h3><div class="route">Mixed electronics · 210 kg · 2 pallets</div>
+          <div class="footer"><span>Ready for dispatch</span><span>ETA: To be confirmed</span></div>
+          <details><summary>Shipment details</summary><p>Origin: Hargeisa (HGA). Current milestone: ready for dispatch. Contact operations for confirmed departure and arrival timing.</p></details>
         </article>
-        <article class="shipment-card">
+        <article class="shipment-card" data-shipment-id="228" data-destination="Nairobi" data-status="in transit">
           <div class="meta"><span class="ref">Shipment #AS-228</span><span class="status-pill is-transit" data-status="In transit">In transit</span></div>
-          <h3>HGA → Nairobi</h3>
-          <div class="route">Pharma goods · 92 kg · 1 crate</div>
-          <div class="footer"><span>Warehouse handover</span><span>ETA: 8 Jun</span></div>
+          <h3>HGA → Nairobi</h3><div class="route">Pharma goods · 92 kg · 1 crate</div>
+          <div class="footer"><span>Warehouse handover</span><span>ETA: To be confirmed</span></div>
+          <details><summary>Shipment details</summary><p>Origin: Hargeisa (HGA). Current milestone: warehouse handover. Contact operations for the latest tracking update.</p></details>
         </article>
-        <article class="shipment-card">
+        <article class="shipment-card" data-shipment-id="214" data-destination="Addis Ababa" data-status="documents">
           <div class="meta"><span class="ref">Shipment #AS-214</span><span class="status-pill is-docs" data-status="Documents">Documents</span></div>
-          <h3>HGA → Addis Ababa</h3>
-          <div class="route">General cargo · 135 kg · 4 cartons</div>
-          <div class="footer"><span>Pending invoice</span><span>ETA: 2 Jun</span></div>
+          <h3>HGA → Addis Ababa</h3><div class="route">General cargo · 135 kg · 4 cartons</div>
+          <div class="footer"><span>Pending invoice</span><span>ETA: To be confirmed</span></div>
+          <details><summary>Shipment details</summary><p>Origin: Hargeisa (HGA). Current milestone: invoice pending. Submit required paperwork through the approved customer document channel.</p></details>
         </article>
+        <p id="shipment-empty" class="empty-state" hidden>No shipments match your search. Try another shipment ID, destination, or status.</p>
       </div>
     </section>
 
     <section class="section-spacer dash-layout">
       <div class="panel">
-        <div class="panel-header">
-          <h2>Shipment timeline</h2>
-          <span class="portal-chip">AS-221</span>
-        </div>
+        <div class="panel-header"><h2>Shipment timeline</h2><span class="portal-chip">AS-221 · Sample timeline</span></div>
         <ul class="timeline">
-          <li><span class="dot"></span><div class="event"><strong>Quote accepted</strong><span>May 27, 2026 · Customer approved service and route.</span></div></li>
-          <li><span class="dot"></span><div class="event"><strong>Booked</strong><span>May 29, 2026 · Airsell confirmed booking and handover timing.</span></div></li>
-          <li><span class="dot"></span><div class="event"><strong>Pickup scheduled</strong><span>May 31, 2026 · Cargo readiness check completed at HGA.</span></div></li>
-          <li><span class="dot"></span><div class="event"><strong>In transit</strong><span>Next milestone after cargo leaves the airport handling facility.</span></div></li>
+          <li><span class="dot"></span><div class="event"><strong>Quote accepted</strong><span>Sample event · Customer approved service and route.</span></div></li>
+          <li><span class="dot"></span><div class="event"><strong>Booked</strong><span>Sample event · Booking and handover timing confirmed.</span></div></li>
+          <li><span class="dot"></span><div class="event"><strong>Pickup scheduled</strong><span>Sample event · Cargo readiness check at HGA.</span></div></li>
+          <li><span class="dot"></span><div class="event"><strong>Next: In transit</strong><span>Upcoming milestone after cargo leaves the airport handling facility.</span></div></li>
         </ul>
       </div>
-
       <div class="panel">
-        <div class="panel-header">
-          <h2>Required documents</h2>
-        </div>
+        <div class="panel-header"><h2>Required documents</h2></div>
         <div class="document-list">
-          <div class="file-item"><div class="meta"><strong>Commercial invoice</strong><br>Uploaded · 30 May</div><span class="tag">Approved</span></div>
-          <div class="file-item"><div class="meta"><strong>Packing list</strong><br>Uploaded · 30 May</div><span class="tag">Approved</span></div>
+          <div class="file-item"><div class="meta"><strong>Commercial invoice</strong><br>Uploaded · sample</div><span class="tag">Approved</span></div>
+          <div class="file-item"><div class="meta"><strong>Packing list</strong><br>Uploaded · sample</div><span class="tag">Approved</span></div>
           <div class="file-item"><div class="meta"><strong>Export declaration</strong><br>Pending review</div><span class="tag">Review</span></div>
-          <div class="file-item"><div class="meta"><strong>Insurance copy</strong><br>Ready to upload</div><span class="tag">Upload</span></div>
+          <div class="file-item"><div class="meta"><strong>Insurance copy</strong><br>Required</div><span class="tag">Required</span></div>
         </div>
+        <p class="portal-note">Document upload is not enabled on this demo page.</p>
       </div>
     </section>
 
     <section class="section-spacer app-grid">
-      <div class="panel compact-card">
-        <h3>Shipment performance</h3>
-        <div class="mini-chart" aria-label="Shipment performance chart">
-          <div class="mini-bar" data-width="45"></div>
-          <div class="mini-bar" data-width="68"></div>
-          <div class="mini-bar" data-width="79"></div>
-          <div class="mini-bar" data-width="92"></div>
-          <div class="mini-bar" data-width="84"></div>
-        </div>
-        <div class="chart-labels"><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span></div>
-      </div>
-      <div class="panel compact-card">
-        <h3>Recent actions</h3>
-        <div class="small-list">
-          <div class="small-item"><span>Quote update</span><strong>2 days ago</strong></div>
-          <div class="small-item"><span>Document review</span><strong>3 days ago</strong></div>
-          <div class="small-item"><span>Booking confirm</span><strong>1 week ago</strong></div>
-        </div>
-      </div>
+      <div class="panel compact-card"><h3>Shipment performance</h3><div class="mini-chart" aria-label="Illustrative shipment performance chart"><div class="mini-bar" data-width="45"></div><div class="mini-bar" data-width="68"></div><div class="mini-bar" data-width="79"></div><div class="mini-bar" data-width="92"></div><div class="mini-bar" data-width="84"></div></div><div class="chart-labels"><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span></div><p class="portal-note">Illustrative sample figures.</p></div>
+      <div class="panel compact-card"><h3>Recent actions</h3><div class="small-list"><div class="small-item"><span>Quote update</span><strong>Sample</strong></div><div class="small-item"><span>Document review</span><strong>Sample</strong></div><div class="small-item"><span>Booking confirm</span><strong>Sample</strong></div></div></div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <a class="brand footer-brand" href="index.html"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 42 42" fill="none"><path d="M5 24.5 36.5 7 24 37l-4.1-11.4L5 24.5Z" fill="currentColor"/><path d="m19.9 25.6 8.5-8.5" stroke="#102B36" stroke-width="2.3" stroke-linecap="round"/></svg></span><span class="brand-name">airsell<span>cargo</span></span></a>
+    <a class="brand footer-brand" href="index.html" aria-label="Airsell Cargo home"><span class="brand-name">airsell<span>cargo</span></span></a>
     <p>Customer portal · Freight coordination · Hargeisa, Somaliland</p>
     <span class="copyright">© <span id="year"></span> Airsell Cargo Services</span>
     <a class="back-top" href="#top">BACK TO TOP ↑</a>
