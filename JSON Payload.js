@@ -1,0 +1,7 @@
+version: "1.0"
+server:
+  host: 0.0.0.0
+  port: 8080
+  features:
+    - auth
+    - cors
