@@ -1,15 +1,16 @@
 <?php
-$host = '127.0.0.1';
-$port = '3306';
-$dbname = 'airsellcargo';
-$username = 'root';
-$password = ''; // Leave empty only for the default XAMPP local setup.
- 
+$dsn = sprintf(
+    'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+    getenv('DB_HOST') ?: '127.0.0.1',
+    getenv('DB_PORT') ?: '3306',
+    getenv('DB_NAME') ?: 'airsellcargo'
+);
+
 try {
     $pdo = new PDO(
-        "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4",
-        $username,
-        $password,
+        $dsn,
+        getenv('DB_USER') ?: 'root',
+        getenv('DB_PASSWORD') ?: '',
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -17,6 +18,7 @@ try {
         ]
     );
 } catch (PDOException $e) {
+    error_log('Database connection failed: ' . $e->getMessage());
     http_response_code(500);
     exit('Database connection failed.');
 }
