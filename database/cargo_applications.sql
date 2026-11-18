@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS cargo_applications (
     reference VARCHAR(30) NOT NULL,
     hawb_number VARCHAR(100) NULL,
     sender_name VARCHAR(150) NOT NULL,
-    sender_phone VARCHAR(50) NOT NOT NULL,
+    sender_phone VARCHAR(50) NOT NULL,
     sender_address VARCHAR(500) NOT NULL,
     receiver_name VARCHAR(150) NOT NULL,
     receiver_phone VARCHAR(50) NOT NULL,
