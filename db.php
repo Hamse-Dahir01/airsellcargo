@@ -4,7 +4,7 @@ $port = '3306';
 $dbname = 'airsellcargo';
 $username = 'root';
 $password = ''; // Leave empty only for the default XAMPP local setup.
-
+ 
 try {
     $pdo = new PDO(
         "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4",
