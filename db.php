@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$required = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
+$required = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER'];
 
 foreach ($required as $name) {
     $value = getenv($name);
@@ -13,18 +13,38 @@ foreach ($required as $name) {
     }
 }
 
+$dbPassword = getenv('DB_PASSWORD');
+if ($dbPassword === false) {
+    error_log('Missing database environment variable: DB_PASSWORD');
+    http_response_code(500);
+    exit('Database configuration is unavailable.');
+}
+
+$dbHost = (string) getenv('DB_HOST');
+$dbPort = (string) getenv('DB_PORT');
+$dbName = (string) getenv('DB_NAME');
+$dbUser = (string) getenv('DB_USER');
+
+if (!filter_var($dbPort, FILTER_VALIDATE_INT, [
+    'options' => ['min_range' => 1, 'max_range' => 65535],
+])) {
+    error_log('Invalid database port configuration.');
+    http_response_code(500);
+    exit('Database configuration is unavailable.');
+}
+
 $dsn = sprintf(
     'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-    getenv('DB_HOST'),
-    getenv('DB_PORT'),
-    getenv('DB_NAME')
+    $dbHost,
+    $dbPort,
+    $dbName
 );
 
 try {
     $pdo = new PDO(
         $dsn,
-        getenv('DB_USER'),
-        getenv('DB_PASSWORD'),
+        $dbUser,
+        $dbPassword,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
