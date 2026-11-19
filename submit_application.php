@@ -25,10 +25,10 @@ function text_field(string $name, int $max = 255): string
 }
 
 try {
-    $senderName = text_field('sender_name', 150);
+    $senderName = text_field('sender_name', 50);
     $senderPhone = text_field('sender_phone', 50);
     $senderAddress = text_field('sender_address', 500);
-    $receiverName = text_field('receiver_name', 150);
+    $receiverName = text_field('receiver_name', 50);
     $receiverPhone = text_field('receiver_phone', 50);
     $receiverAddress = text_field('receiver_address', 500);
     $origin = text_field('origin', 150);
