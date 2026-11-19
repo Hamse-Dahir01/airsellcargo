@@ -1,16 +1,30 @@
 <?php
+declare(strict_types=1);
+
+$required = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
+
+foreach ($required as $name) {
+    $value = getenv($name);
+
+    if ($value === false || $value === '') {
+        error_log("Missing required database environment variable: {$name}");
+        http_response_code(500);
+        exit('Database configuration is unavailable.');
+    }
+}
+
 $dsn = sprintf(
     'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-    getenv('DB_HOST') ?: '127.0.0.1',
-    getenv('DB_PORT') ?: '3306',
-    getenv('DB_NAME') ?: 'airsellcargo'
+    getenv('DB_HOST'),
+    getenv('DB_PORT'),
+    getenv('DB_NAME')
 );
 
 try {
     $pdo = new PDO(
         $dsn,
-        getenv('DB_USER') ?: 'root',
-        getenv('DB_PASSWORD') ?: '',
+        getenv('DB_USER'),
+        getenv('DB_PASSWORD'),
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
