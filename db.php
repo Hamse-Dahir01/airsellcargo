@@ -1,49 +1,37 @@
 <?php
 declare(strict_types=1);
 
-$required = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER'];
+$defaults = [
+    'DB_HOST' => 'localhost',
+    'DB_PORT' => '3306',
+    'DB_NAME' => 'airsellcargo',
+    'DB_USER' => 'airsellcargo_app',
+];
 
-foreach ($required as $name) {
+foreach ($defaults as $name => $default) {
     $value = getenv($name);
-
     if ($value === false || $value === '') {
-        error_log("Missing required database environment variable: {$name}");
-        http_response_code(500);
-        exit('Database configuration is unavailable.');
+        if ($name === 'DB_PASSWORD') {
+            throw new RuntimeException('Database password is not configured.');
+        }
+        putenv("$name=$default");
     }
 }
 
 $dbPassword = getenv('DB_PASSWORD');
-if ($dbPassword === false) {
-    error_log('Missing database environment variable: DB_PASSWORD');
-    http_response_code(500);
-    exit('Database configuration is unavailable.');
+if (!is_string($dbPassword) || $dbPassword === '') {
+    throw new RuntimeException('Database password is not configured.');
 }
-
-$dbHost = (string) getenv('DB_HOST');
-$dbPort = (string) getenv('DB_PORT');
-$dbName = (string) getenv('DB_NAME');
-$dbUser = (string) getenv('DB_USER');
-
-if (!filter_var($dbPort, FILTER_VALIDATE_INT, [
-    'options' => ['min_range' => 1, 'max_range' => 65535],
-])) {
-    error_log('Invalid database port configuration.');
-    http_response_code(500);
-    exit('Database configuration is unavailable.');
-}
-
-$dsn = sprintf(
-    'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-    $dbHost,
-    $dbPort,
-    $dbName
-);
 
 try {
     $pdo = new PDO(
-        $dsn,
-        $dbUser,
+        sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+            getenv('DB_HOST'),
+            getenv('DB_PORT'),
+            getenv('DB_NAME')
+        ),
+        getenv('DB_USER'),
         $dbPassword,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
