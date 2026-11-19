@@ -38,7 +38,9 @@
     }
 
     .brand { margin: 0 0 8px; font-size: 27px; letter-spacing: -0.02em; }
-    .subtitle { margin: 0 0 28px; color: var(--muted); }
+    .subtitle { margin: 0 0 14px; color: var(--muted); }
+    .home-link { display: inline-block; margin-bottom: 24px; color: var(--blue); font-size: 14px; font-weight: 700; text-decoration: none; }
+    .home-link:hover { text-decoration: underline; }
     .field { margin-bottom: 18px; }
 
     label {
@@ -104,6 +106,7 @@
   <main class="login-card" aria-labelledby="login-title">
     <h1 class="brand" id="login-title">Airsell Cargo</h1>
     <p class="subtitle">Sign in to the staff portal</p>
+    <a class="home-link" href="index.html">← Return to Airsell Cargo home</a>
 
     <form id="login-form" novalidate>
       <div class="field">
